@@ -33,7 +33,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
       <a
-        href="https://instagram.com/ahmadfauzan"
+        href="https://instagram.com/aahmd.fznn"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-4 right-4 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
