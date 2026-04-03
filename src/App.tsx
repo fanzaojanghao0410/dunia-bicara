@@ -36,7 +36,7 @@ const App = () => (
         href="https://instagram.com/aahmd.fznn"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-35 right-4 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
+        className="fixed bottom-40 right-4 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
         aria-label="Instagram Ahmad Fauzan"
       >
         <Instagram size={24} />
