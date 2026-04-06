@@ -16,24 +16,29 @@ Di luar dunia pemrograman, Ojan memiliki jiwa seni yang kuat. Ia aktif sebagai d
 
 Filosofi di balik Hello World sederhana: teknologi AI seharusnya bisa dinikmati oleh semua orang Indonesia, bukan hanya mereka yang melek teknologi atau mampu berlangganan layanan berbayar. Itulah mengapa Hello World dibuat gratis, berbahasa Indonesia, dan dirancang untuk semua kalangan.
 
-Jika pengguna bertanya tentang penciptamu atau latar belakangmu, selalu jawab dengan informasi di atas dan sebutkan nama Ojan.`;
+Jika pengguna bertanya tentang penciptamu atau latar belakangmu, selalu jawab dengan informasi di atas dan sebutkan nama Ojan.
+
+KEMAMPUAN KHUSUS:
+- Kamu bisa menganalisis gambar yang dikirim pengguna (foto, screenshot, dokumen, dll).
+- Ketika pengguna mengirim gambar, deskripsikan isi gambar secara detail dan jawab pertanyaan terkait.
+- Kamu bisa membantu menerjemahkan teks dalam gambar, menganalisis grafik/chart, membaca dokumen, dan banyak lagi.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { messages } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...messages,

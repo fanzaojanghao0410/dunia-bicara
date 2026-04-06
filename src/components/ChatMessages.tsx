@@ -5,6 +5,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrls?: string[];
 }
 
 interface ChatMessagesProps {
@@ -48,12 +49,24 @@ const ChatMessages = ({ messages, isStreaming }: ChatMessagesProps) => {
                 : 'bg-assistant-bubble text-assistant-bubble-foreground rounded-bl-md'
             }`}
           >
+            {msg.imageUrls && msg.imageUrls.length > 0 && (
+              <div className="flex gap-2 flex-wrap mb-2">
+                {msg.imageUrls.map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt="Uploaded"
+                    className="max-w-[200px] max-h-[200px] rounded-lg object-cover"
+                  />
+                ))}
+              </div>
+            )}
             {msg.role === 'assistant' ? (
               <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:bg-background prose-pre:rounded-lg prose-code:text-primary">
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
             ) : (
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              msg.content !== '(gambar)' && <p className="whitespace-pre-wrap">{msg.content}</p>
             )}
           </div>
         </div>

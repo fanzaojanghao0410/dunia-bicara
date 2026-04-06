@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { streamChat, Msg } from '@/lib/streamChat';
+import { streamChat, Msg, ContentPart } from '@/lib/streamChat';
 import ChatSidebar from '@/components/ChatSidebar';
 import ChatMessages from '@/components/ChatMessages';
 import ChatInput from '@/components/ChatInput';
 import WelcomeScreen from '@/components/WelcomeScreen';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Conversation {
@@ -19,6 +19,7 @@ interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrls?: string[];
 }
 
 const Chat = () => {
@@ -62,17 +63,51 @@ const Chat = () => {
     fetchConversations();
   };
 
-  const sendMessage = async (text: string) => {
+  const uploadImages = async (imageUrls: string[]): Promise<string[]> => {
+    if (!user) return [];
+    const uploaded: string[] = [];
+
+    for (const blobUrl of imageUrls) {
+      try {
+        const resp = await fetch(blobUrl);
+        const blob = await resp.blob();
+        const ext = blob.type.split('/')[1] || 'png';
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+        const { error } = await supabase.storage
+          .from('chat-attachments')
+          .upload(fileName, blob, { contentType: blob.type });
+
+        if (!error) {
+          const { data: urlData } = supabase.storage
+            .from('chat-attachments')
+            .getPublicUrl(fileName);
+          uploaded.push(urlData.publicUrl);
+        }
+      } catch (e) {
+        console.error('Upload failed:', e);
+      }
+    }
+    return uploaded;
+  };
+
+  const sendMessage = async (text: string, imageUrls?: string[]) => {
     if (!user || isStreaming) return;
 
     let convId = activeId;
+    let uploadedUrls: string[] = [];
+
+    // Upload images if any
+    if (imageUrls && imageUrls.length > 0) {
+      uploadedUrls = await uploadImages(imageUrls);
+    }
 
     // Create conversation if none active
     if (!convId) {
       const title = text.split(/\s+/).slice(0, 6).join(' ');
       const { data: conv, error } = await supabase
         .from('conversations')
-        .insert({ user_id: user.id, title })
+        .insert({ user_id: user.id, title: title || 'Analisis Gambar' })
         .select('id')
         .single();
       if (error || !conv) {
@@ -83,21 +118,44 @@ const Chat = () => {
       setActiveId(convId);
     }
 
-    // Save user message
+    // Save user message (store image URLs in content as metadata)
+    const contentToSave = uploadedUrls.length > 0
+      ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]`
+      : text;
+
     const { data: userMsg } = await supabase
       .from('messages')
-      .insert({ conversation_id: convId, user_id: user.id, role: 'user', content: text })
+      .insert({ conversation_id: convId, user_id: user.id, role: 'user', content: contentToSave })
       .select('id, role, content')
       .single();
 
     if (!userMsg) return;
 
-    const newMessages = [...messages, userMsg as ChatMessage];
+    const displayMsg: ChatMessage = {
+      id: userMsg.id,
+      role: 'user',
+      content: text,
+      imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+    };
+
+    const newMessages = [...messages, displayMsg];
     setMessages(newMessages);
     setIsStreaming(true);
 
-    // Build history for AI
-    const history: Msg[] = newMessages.map(m => ({ role: m.role, content: m.content }));
+    // Build history for AI - include images as multimodal content
+    const history: Msg[] = newMessages.map(m => {
+      if (m.imageUrls && m.imageUrls.length > 0) {
+        const parts: ContentPart[] = [];
+        if (m.content && m.content !== '(gambar)') {
+          parts.push({ type: 'text', text: m.content });
+        }
+        for (const url of m.imageUrls) {
+          parts.push({ type: 'image_url', image_url: { url } });
+        }
+        return { role: m.role, content: parts };
+      }
+      return { role: m.role, content: m.content };
+    });
 
     let assistantContent = '';
     const tempId = 'streaming-' + Date.now();
@@ -118,7 +176,6 @@ const Chat = () => {
         onDone: () => {},
       });
 
-      // Save assistant message to DB
       const { data: savedMsg } = await supabase
         .from('messages')
         .insert({ conversation_id: convId, user_id: user.id, role: 'assistant', content: assistantContent })
@@ -129,7 +186,6 @@ const Chat = () => {
         setMessages(prev => prev.map(m => m.id === tempId ? (savedMsg as ChatMessage) : m));
       }
 
-      // Update conversation timestamp
       await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
       fetchConversations();
     } catch (err: any) {
@@ -141,12 +197,10 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div className={`
         fixed md:relative z-50 md:z-auto h-full w-[260px] shrink-0
         transform transition-transform duration-200 ease-in-out
@@ -162,9 +216,7 @@ const Chat = () => {
         />
       </div>
 
-      {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile header */}
         <div className="md:hidden flex items-center h-12 px-4 border-b border-border shrink-0">
           <button onClick={() => setSidebarOpen(true)} className="p-1 rounded hover:bg-secondary transition-colors">
             <Menu className="w-5 h-5" />
@@ -181,7 +233,7 @@ const Chat = () => {
           </>
         ) : (
           <>
-            <WelcomeScreen onSuggestionClick={sendMessage} />
+            <WelcomeScreen onSuggestionClick={(text) => sendMessage(text)} />
             <ChatInput onSend={sendMessage} disabled={isStreaming} />
           </>
         )}
