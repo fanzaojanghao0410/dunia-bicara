@@ -52,10 +52,7 @@ const Chat = () => {
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
   useEffect(() => { if (activeId) fetchMessages(activeId); }, [activeId, fetchMessages]);
 
-  const handleNew = () => {
-    setActiveId(null);
-    setMessages([]);
-  };
+  const handleNew = () => { setActiveId(null); setMessages([]); };
 
   const handleDelete = async (id: string) => {
     await supabase.from('conversations').delete().eq('id', id);
@@ -66,84 +63,24 @@ const Chat = () => {
   const uploadImages = async (imageUrls: string[]): Promise<string[]> => {
     if (!user) return [];
     const uploaded: string[] = [];
-
     for (const blobUrl of imageUrls) {
       try {
         const resp = await fetch(blobUrl);
         const blob = await resp.blob();
         const ext = blob.type.split('/')[1] || 'png';
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-        const { error } = await supabase.storage
-          .from('chat-attachments')
-          .upload(fileName, blob, { contentType: blob.type });
-
+        const { error } = await supabase.storage.from('chat-attachments').upload(fileName, blob, { contentType: blob.type });
         if (!error) {
-          const { data: urlData } = supabase.storage
-            .from('chat-attachments')
-            .getPublicUrl(fileName);
+          const { data: urlData } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
           uploaded.push(urlData.publicUrl);
         }
-      } catch (e) {
-        console.error('Upload failed:', e);
-      }
+      } catch (e) { console.error('Upload failed:', e); }
     }
     return uploaded;
   };
 
-  const sendMessage = async (text: string, imageUrls?: string[]) => {
-    if (!user || isStreaming) return;
-
-    let convId = activeId;
-    let uploadedUrls: string[] = [];
-
-    // Upload images if any
-    if (imageUrls && imageUrls.length > 0) {
-      uploadedUrls = await uploadImages(imageUrls);
-    }
-
-    // Create conversation if none active
-    if (!convId) {
-      const title = text.split(/\s+/).slice(0, 6).join(' ');
-      const { data: conv, error } = await supabase
-        .from('conversations')
-        .insert({ user_id: user.id, title: title || 'Analisis Gambar' })
-        .select('id')
-        .single();
-      if (error || !conv) {
-        toast.error('Gagal membuat percakapan.');
-        return;
-      }
-      convId = conv.id;
-      setActiveId(convId);
-    }
-
-    // Save user message (store image URLs in content as metadata)
-    const contentToSave = uploadedUrls.length > 0
-      ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]`
-      : text;
-
-    const { data: userMsg } = await supabase
-      .from('messages')
-      .insert({ conversation_id: convId, user_id: user.id, role: 'user', content: contentToSave })
-      .select('id, role, content')
-      .single();
-
-    if (!userMsg) return;
-
-    const displayMsg: ChatMessage = {
-      id: userMsg.id,
-      role: 'user',
-      content: text,
-      imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
-    };
-
-    const newMessages = [...messages, displayMsg];
-    setMessages(newMessages);
-    setIsStreaming(true);
-
-    // Build history for AI - include images as multimodal content
-    const history: Msg[] = newMessages.map(m => {
+  const buildHistory = (msgs: ChatMessage[]): Msg[] => {
+    return msgs.map(m => {
       if (m.imageUrls && m.imageUrls.length > 0) {
         const parts: ContentPart[] = [];
         if (m.content && m.content !== '(gambar)') {
@@ -156,9 +93,12 @@ const Chat = () => {
       }
       return { role: m.role, content: m.content };
     });
+  };
 
+  const streamAssistant = async (convId: string, history: Msg[], currentMessages: ChatMessage[]) => {
     let assistantContent = '';
     const tempId = 'streaming-' + Date.now();
+    setIsStreaming(true);
 
     try {
       await streamChat({
@@ -178,7 +118,7 @@ const Chat = () => {
 
       const { data: savedMsg } = await supabase
         .from('messages')
-        .insert({ conversation_id: convId, user_id: user.id, role: 'assistant', content: assistantContent })
+        .insert({ conversation_id: convId, user_id: user!.id, role: 'assistant', content: assistantContent })
         .select('id, role, content')
         .single();
 
@@ -195,8 +135,95 @@ const Chat = () => {
     }
   };
 
+  const sendMessage = async (text: string, imageUrls?: string[]) => {
+    if (!user || isStreaming) return;
+
+    let convId = activeId;
+    let uploadedUrls: string[] = [];
+
+    if (imageUrls && imageUrls.length > 0) {
+      uploadedUrls = await uploadImages(imageUrls);
+    }
+
+    if (!convId) {
+      const title = text.split(/\s+/).slice(0, 6).join(' ');
+      const { data: conv, error } = await supabase
+        .from('conversations')
+        .insert({ user_id: user.id, title: title || 'Analisis Gambar' })
+        .select('id')
+        .single();
+      if (error || !conv) { toast.error('Gagal membuat percakapan.'); return; }
+      convId = conv.id;
+      setActiveId(convId);
+    }
+
+    const contentToSave = uploadedUrls.length > 0 ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]` : text;
+    const { data: userMsg } = await supabase
+      .from('messages')
+      .insert({ conversation_id: convId, user_id: user.id, role: 'user', content: contentToSave })
+      .select('id, role, content')
+      .single();
+    if (!userMsg) return;
+
+    const displayMsg: ChatMessage = {
+      id: userMsg.id, role: 'user', content: text,
+      imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+    };
+
+    const newMessages = [...messages, displayMsg];
+    setMessages(newMessages);
+    await streamAssistant(convId, buildHistory(newMessages), newMessages);
+  };
+
+  const handleEdit = async (messageId: string, newContent: string) => {
+    if (!user || !activeId || isStreaming) return;
+
+    // Find the message index
+    const msgIdx = messages.findIndex(m => m.id === messageId);
+    if (msgIdx === -1) return;
+
+    // Keep messages before the edited one, then add the edited version
+    const before = messages.slice(0, msgIdx);
+
+    // Delete old messages from DB (the edited one and everything after)
+    const idsToDelete = messages.slice(msgIdx).map(m => m.id).filter(id => !id.startsWith('streaming-'));
+    for (const id of idsToDelete) {
+      await supabase.from('messages').delete().eq('id', id);
+    }
+
+    // Save new user message
+    const { data: newUserMsg } = await supabase
+      .from('messages')
+      .insert({ conversation_id: activeId, user_id: user.id, role: 'user', content: newContent })
+      .select('id, role, content')
+      .single();
+    if (!newUserMsg) return;
+
+    const editedMsg: ChatMessage = { id: newUserMsg.id, role: 'user', content: newContent };
+    const newMessages = [...before, editedMsg];
+    setMessages(newMessages);
+    await streamAssistant(activeId, buildHistory(newMessages), newMessages);
+  };
+
+  const handleRegenerate = async (messageId: string) => {
+    if (!user || !activeId || isStreaming) return;
+
+    const msgIdx = messages.findIndex(m => m.id === messageId);
+    if (msgIdx === -1 || messages[msgIdx].role !== 'assistant') return;
+
+    // Delete the assistant message from DB
+    if (!messageId.startsWith('streaming-')) {
+      await supabase.from('messages').delete().eq('id', messageId);
+    }
+
+    // Remove the assistant message
+    const before = messages.slice(0, msgIdx);
+    setMessages(before);
+    await streamAssistant(activeId, buildHistory(before), before);
+  };
+
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-background">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -218,7 +245,7 @@ const Chat = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="md:hidden flex items-center h-12 px-4 border-b border-border shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="p-1 rounded hover:bg-secondary transition-colors">
+          <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
             <Menu className="w-5 h-5" />
           </button>
           <span className="ml-3 font-heading font-bold text-sm">
@@ -228,7 +255,12 @@ const Chat = () => {
 
         {activeId ? (
           <>
-            <ChatMessages messages={messages} isStreaming={isStreaming} />
+            <ChatMessages
+              messages={messages}
+              isStreaming={isStreaming}
+              onEdit={handleEdit}
+              onRegenerate={handleRegenerate}
+            />
             <ChatInput onSend={sendMessage} disabled={isStreaming} />
           </>
         ) : (
