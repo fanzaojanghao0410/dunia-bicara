@@ -40,7 +40,11 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     const files = Array.from(e.target.files || []);
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
-    const newImages = imageFiles.map(file => ({ file, preview: URL.createObjectURL(file) }));
+
+    const newImages = imageFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
     setImages(prev => [...prev, ...newImages].slice(0, 4));
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -56,28 +60,28 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     <div className="border-t border-border p-4">
       <div className="max-w-3xl mx-auto">
         {images.length > 0 && (
-          <div className="flex gap-2 mb-3 flex-wrap">
+          <div className="flex gap-2 mb-2 flex-wrap">
             {images.map((img, i) => (
-              <div key={i} className="relative group w-16 h-16 rounded-xl overflow-hidden border border-border/50">
+              <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-border">
                 <img src={img.preview} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={() => removeImage(i)}
-                  className="absolute inset-0 bg-background/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-0 right-0 bg-background/80 rounded-bl-lg p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <X className="w-4 h-4 text-foreground" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 glass rounded-2xl p-2">
+        <div className="flex items-end gap-2">
           <Button
             type="button"
             size="icon"
             variant="ghost"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="shrink-0 h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground"
+            className="shrink-0 h-10 w-10 rounded-xl"
           >
             <ImagePlus className="w-5 h-5" />
           </Button>
@@ -96,21 +100,18 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
             onKeyDown={handleKeyDown}
             placeholder="Ketik pesan atau kirim gambar..."
             rows={1}
-            className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none scrollbar-thin font-body"
+            className="flex-1 resize-none bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 scrollbar-thin font-body"
             disabled={disabled}
           />
           <Button
             size="icon"
             onClick={handleSend}
             disabled={disabled || (!text.trim() && images.length === 0)}
-            className="shrink-0 h-9 w-9 rounded-xl"
+            className="shrink-0 h-10 w-10 rounded-xl"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground text-center mt-2">
-          Tekan Enter untuk kirim, Shift+Enter untuk baris baru
-        </p>
       </div>
     </div>
   );
