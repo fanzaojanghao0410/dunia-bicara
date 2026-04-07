@@ -31,22 +31,26 @@ const ChatSidebar = ({ conversations, activeId, onSelect, onNew, onDelete, onClo
   };
 
   return (
-    <div className="flex flex-col h-full bg-sidebar">
+    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <div className="p-4 border-b border-sidebar-border">
-        <h2 className="font-heading text-lg font-bold">
+        <h2 className="font-heading text-lg font-bold tracking-tight">
           Hello <span className="text-gold">World</span>
         </h2>
       </div>
 
       <div className="p-3">
-        <Button onClick={onNew} className="w-full font-heading font-semibold gap-2" size="sm">
+        <Button
+          onClick={onNew}
+          className="w-full font-heading font-semibold gap-2 bg-gold text-primary-foreground hover:bg-gold/90"
+          size="sm"
+        >
           <Plus className="w-4 h-4" />
           Percakapan Baru
         </Button>
       </div>
 
       <ScrollArea className="flex-1 px-2">
-        <div className="space-y-1">
+        <div className="space-y-1 py-1">
           {conversations.map(c => (
             <button
               key={c.id}
@@ -74,12 +78,12 @@ const ChatSidebar = ({ conversations, activeId, onSelect, onNew, onDelete, onClo
         </div>
       </ScrollArea>
 
-      <div className="p-3 border-t border-sidebar-border space-y-2">
+      <div className="p-3 border-t border-sidebar-border space-y-1">
         <button
           onClick={() => { navigate('/profile'); onClose?.(); }}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
-          <User className="w-4 h-4" />
+          <User className="w-4 h-4 text-gold" />
           <span className="truncate">{profile?.full_name || 'Profil'}</span>
         </button>
         <button

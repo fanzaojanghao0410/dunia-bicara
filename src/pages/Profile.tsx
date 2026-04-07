@@ -58,7 +58,7 @@ const Profile = () => {
             <Label>Email</Label>
             <Input value={user?.email ?? ''} disabled className="opacity-60" />
           </div>
-          <Button onClick={handleSave} className="w-full font-heading font-semibold" disabled={saving}>
+          <Button onClick={handleSave} className="w-full font-heading font-semibold bg-gold text-primary-foreground hover:bg-gold/90" disabled={saving}>
             {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
           </Button>
           <Button variant="outline" onClick={handleLogout} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10">

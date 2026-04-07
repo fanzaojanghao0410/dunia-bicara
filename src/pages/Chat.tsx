@@ -66,18 +66,15 @@ const Chat = () => {
   const uploadImages = async (imageUrls: string[]): Promise<string[]> => {
     if (!user) return [];
     const uploaded: string[] = [];
-
     for (const blobUrl of imageUrls) {
       try {
         const resp = await fetch(blobUrl);
         const blob = await resp.blob();
         const ext = blob.type.split('/')[1] || 'png';
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
         const { error } = await supabase.storage
           .from('chat-attachments')
           .upload(fileName, blob, { contentType: blob.type });
-
         if (!error) {
           const { data: urlData } = supabase.storage
             .from('chat-attachments')
@@ -97,12 +94,10 @@ const Chat = () => {
     let convId = activeId;
     let uploadedUrls: string[] = [];
 
-    // Upload images if any
     if (imageUrls && imageUrls.length > 0) {
       uploadedUrls = await uploadImages(imageUrls);
     }
 
-    // Create conversation if none active
     if (!convId) {
       const title = text.split(/\s+/).slice(0, 6).join(' ');
       const { data: conv, error } = await supabase
@@ -118,7 +113,6 @@ const Chat = () => {
       setActiveId(convId);
     }
 
-    // Save user message (store image URLs in content as metadata)
     const contentToSave = uploadedUrls.length > 0
       ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]`
       : text;
@@ -142,7 +136,6 @@ const Chat = () => {
     setMessages(newMessages);
     setIsStreaming(true);
 
-    // Build history for AI - include images as multimodal content
     const history: Msg[] = newMessages.map(m => {
       if (m.imageUrls && m.imageUrls.length > 0) {
         const parts: ContentPart[] = [];
@@ -196,9 +189,9 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-background">
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <div className={`
@@ -209,7 +202,7 @@ const Chat = () => {
         <ChatSidebar
           conversations={conversations}
           activeId={activeId}
-          onSelect={setActiveId}
+          onSelect={(id) => { setActiveId(id); setSidebarOpen(false); }}
           onNew={handleNew}
           onDelete={handleDelete}
           onClose={() => setSidebarOpen(false)}
@@ -218,7 +211,7 @@ const Chat = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="md:hidden flex items-center h-12 px-4 border-b border-border shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="p-1 rounded hover:bg-secondary transition-colors">
+          <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
             <Menu className="w-5 h-5" />
           </button>
           <span className="ml-3 font-heading font-bold text-sm">

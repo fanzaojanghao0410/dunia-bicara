@@ -11,7 +11,6 @@ import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import { Instagram } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -32,15 +31,6 @@ const App = () => (
           </Routes>
         </AuthProvider>
       </BrowserRouter>
-      <a
-        href="https://instagram.com/aahmd.fznn"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed top-25 right-4 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
-        aria-label="Instagram Ahmad Fauzan"
-      >
-        <Instagram size={24} />
-      </a>
     </TooltipProvider>
   </QueryClientProvider>
 );
