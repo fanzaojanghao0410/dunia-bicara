@@ -6,49 +6,52 @@
 
 @layer base {
   :root {
-    --background: 210 20% 8%;
-    --foreground: 210 10% 90%;
+    --background: 228 16% 10%;
+    --foreground: 220 15% 85%;
 
-    --card: 210 25% 12%;
-    --card-foreground: 210 10% 90%;
+    --card: 228 16% 13%;
+    --card-foreground: 220 15% 85%;
 
-    --popover: 210 25% 12%;
-    --popover-foreground: 210 10% 90%;
+    --popover: 228 16% 13%;
+    --popover-foreground: 220 15% 85%;
 
-    --primary: 210 50% 60%;
-    --primary-foreground: 210 20% 8%;
+    --primary: 42 92% 56%;
+    --primary-foreground: 228 16% 10%;
 
-    --secondary: 210 20% 18%;
-    --secondary-foreground: 210 10% 90%;
+    --secondary: 228 12% 16%;
+    --secondary-foreground: 220 15% 80%;
 
-    --muted: 210 15% 15%;
-    --muted-foreground: 210 10% 55%;
+    --muted: 228 10% 18%;
+    --muted-foreground: 220 10% 50%;
 
-    --accent: 210 50% 60%;
-    --accent-foreground: 210 20% 8%;
+    --accent: 42 92% 56%;
+    --accent-foreground: 228 16% 10%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 10% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 210 15% 18%;
-    --input: 210 15% 18%;
-    --ring: 210 50% 60%;
+    --border: 228 10% 18%;
+    --input: 228 10% 20%;
+    --ring: 42 92% 56%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 210 25% 10%;
-    --sidebar-foreground: 210 10% 85%;
-    --sidebar-primary: 210 50% 60%;
-    --sidebar-primary-foreground: 210 20% 8%;
-    --sidebar-accent: 210 20% 16%;
-    --sidebar-accent-foreground: 210 10% 90%;
-    --sidebar-border: 210 15% 16%;
-    --sidebar-ring: 210 50% 60%;
+    --sidebar-background: 228 16% 8%;
+    --sidebar-foreground: 220 12% 75%;
+    --sidebar-primary: 42 92% 56%;
+    --sidebar-primary-foreground: 228 16% 10%;
+    --sidebar-accent: 228 12% 14%;
+    --sidebar-accent-foreground: 220 15% 88%;
+    --sidebar-border: 228 10% 14%;
+    --sidebar-ring: 42 92% 56%;
 
-    --user-bubble: 210 50% 48%;
-    --user-bubble-foreground: 0 0% 100%;
-    --assistant-bubble: 210 20% 14%;
-    --assistant-bubble-foreground: 220 20% 90%;
+    --user-bubble: 228 40% 30%;
+    --user-bubble-foreground: 220 20% 95%;
+    --assistant-bubble: 228 12% 15%;
+    --assistant-bubble-foreground: 220 15% 85%;
+
+    --glass: 228 16% 12% / 0.6;
+    --glass-border: 228 10% 22%;
 
     --font-heading: 'Sora', sans-serif;
     --font-body: 'Plus Jakarta Sans', sans-serif;
@@ -75,13 +78,31 @@
     color: hsl(var(--primary));
   }
 
-  .bg-navy {
-    background-color: hsl(var(--background));
-  }
-
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .glass {
+    background: hsla(var(--glass));
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  .glass-subtle {
+    background: hsla(228, 16%, 12%, 0.4);
+    backdrop-filter: blur(8px);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px -5px hsl(42 92% 56% / 0.2);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(42, 92%, 56%), hsl(42, 80%, 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
@@ -95,3 +116,38 @@
 }
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, hsl(42 92% 56% / 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(228, 10%, 22%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(228, 10%, 28%);
+}
