@@ -6,7 +6,7 @@ import ChatSidebar from '@/components/ChatSidebar';
 import ChatMessages from '@/components/ChatMessages';
 import ChatInput from '@/components/ChatInput';
 import WelcomeScreen from '@/components/WelcomeScreen';
-import { Menu } from 'lucide-react';
+import { Menu, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Conversation {
@@ -52,10 +52,7 @@ const Chat = () => {
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
   useEffect(() => { if (activeId) fetchMessages(activeId); }, [activeId, fetchMessages]);
 
-  const handleNew = () => {
-    setActiveId(null);
-    setMessages([]);
-  };
+  const handleNew = () => { setActiveId(null); setMessages([]); };
 
   const handleDelete = async (id: string) => {
     await supabase.from('conversations').delete().eq('id', id);
@@ -66,43 +63,31 @@ const Chat = () => {
   const uploadImages = async (imageUrls: string[]): Promise<string[]> => {
     if (!user) return [];
     const uploaded: string[] = [];
-
     for (const blobUrl of imageUrls) {
       try {
         const resp = await fetch(blobUrl);
         const blob = await resp.blob();
         const ext = blob.type.split('/')[1] || 'png';
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-        const { error } = await supabase.storage
-          .from('chat-attachments')
-          .upload(fileName, blob, { contentType: blob.type });
-
+        const { error } = await supabase.storage.from('chat-attachments').upload(fileName, blob, { contentType: blob.type });
         if (!error) {
-          const { data: urlData } = supabase.storage
-            .from('chat-attachments')
-            .getPublicUrl(fileName);
+          const { data: urlData } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
           uploaded.push(urlData.publicUrl);
         }
-      } catch (e) {
-        console.error('Upload failed:', e);
-      }
+      } catch (e) { console.error('Upload failed:', e); }
     }
     return uploaded;
   };
 
   const sendMessage = async (text: string, imageUrls?: string[]) => {
     if (!user || isStreaming) return;
-
     let convId = activeId;
     let uploadedUrls: string[] = [];
 
-    // Upload images if any
     if (imageUrls && imageUrls.length > 0) {
       uploadedUrls = await uploadImages(imageUrls);
     }
 
-    // Create conversation if none active
     if (!convId) {
       const title = text.split(/\s+/).slice(0, 6).join(' ');
       const { data: conv, error } = await supabase
@@ -110,48 +95,32 @@ const Chat = () => {
         .insert({ user_id: user.id, title: title || 'Analisis Gambar' })
         .select('id')
         .single();
-      if (error || !conv) {
-        toast.error('Gagal membuat percakapan.');
-        return;
-      }
+      if (error || !conv) { toast.error('Gagal membuat percakapan.'); return; }
       convId = conv.id;
       setActiveId(convId);
     }
 
-    // Save user message (store image URLs in content as metadata)
-    const contentToSave = uploadedUrls.length > 0
-      ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]`
-      : text;
-
+    const contentToSave = uploadedUrls.length > 0 ? `${text}\n\n[IMAGES: ${uploadedUrls.join(', ')}]` : text;
     const { data: userMsg } = await supabase
       .from('messages')
       .insert({ conversation_id: convId, user_id: user.id, role: 'user', content: contentToSave })
       .select('id, role, content')
       .single();
-
     if (!userMsg) return;
 
     const displayMsg: ChatMessage = {
-      id: userMsg.id,
-      role: 'user',
-      content: text,
+      id: userMsg.id, role: 'user', content: text,
       imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
     };
-
     const newMessages = [...messages, displayMsg];
     setMessages(newMessages);
     setIsStreaming(true);
 
-    // Build history for AI - include images as multimodal content
     const history: Msg[] = newMessages.map(m => {
       if (m.imageUrls && m.imageUrls.length > 0) {
         const parts: ContentPart[] = [];
-        if (m.content && m.content !== '(gambar)') {
-          parts.push({ type: 'text', text: m.content });
-        }
-        for (const url of m.imageUrls) {
-          parts.push({ type: 'image_url', image_url: { url } });
-        }
+        if (m.content && m.content !== '(gambar)') parts.push({ type: 'text', text: m.content });
+        for (const url of m.imageUrls) parts.push({ type: 'image_url', image_url: { url } });
         return { role: m.role, content: parts };
       }
       return { role: m.role, content: m.content };
@@ -167,9 +136,7 @@ const Chat = () => {
           assistantContent += chunk;
           setMessages(prev => {
             const last = prev[prev.length - 1];
-            if (last?.id === tempId) {
-              return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-            }
+            if (last?.id === tempId) return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
             return [...prev, { id: tempId, role: 'assistant', content: assistantContent }];
           });
         },
@@ -181,10 +148,7 @@ const Chat = () => {
         .insert({ conversation_id: convId, user_id: user.id, role: 'assistant', content: assistantContent })
         .select('id, role, content')
         .single();
-
-      if (savedMsg) {
-        setMessages(prev => prev.map(m => m.id === tempId ? (savedMsg as ChatMessage) : m));
-      }
+      if (savedMsg) setMessages(prev => prev.map(m => m.id === tempId ? (savedMsg as ChatMessage) : m));
 
       await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
       fetchConversations();
@@ -196,14 +160,14 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-background">
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <div className={`
-        fixed md:relative z-50 md:z-auto h-full w-[260px] shrink-0
-        transform transition-transform duration-200 ease-in-out
+        fixed md:relative z-50 md:z-auto h-full w-[280px] shrink-0
+        transform transition-transform duration-300 ease-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <ChatSidebar
@@ -217,13 +181,16 @@ const Chat = () => {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="md:hidden flex items-center h-12 px-4 border-b border-border shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="p-1 rounded hover:bg-secondary transition-colors">
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between h-14 px-4 border-b border-border shrink-0 glass-subtle">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-secondary transition-colors">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="ml-3 font-heading font-bold text-sm">
-            Hello <span className="text-gold">World</span>
+          <span className="font-heading font-bold text-sm flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Hello <span className="gradient-text">World</span>
           </span>
+          <div className="w-9" />
         </div>
 
         {activeId ? (
