@@ -20,6 +20,9 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center mb-5">
+        <span className="font-heading text-gold text-xl font-bold">HW</span>
+      </div>
       <h2 className="font-heading text-2xl md:text-3xl font-bold mb-2 text-center">
         Halo, {name}! 👋
       </h2>
@@ -30,9 +33,9 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
           <button
             key={s.text}
             onClick={() => onSuggestionClick(s.text)}
-            className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border hover:border-primary/30 transition-all text-left text-sm group"
+            className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border hover:border-gold/30 transition-all text-left text-sm group"
           >
-            <s.icon className="w-5 h-5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+            <s.icon className="w-5 h-5 text-gold shrink-0 group-hover:scale-110 transition-transform" />
             <span className="text-foreground">{s.text}</span>
           </button>
         ))}

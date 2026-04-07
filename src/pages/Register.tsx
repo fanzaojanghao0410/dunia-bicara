@@ -50,11 +50,11 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className="w-full max-w-md bg-card border-border">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-2">
           <CardTitle className="font-heading text-2xl">
             Hello <span className="text-gold">World</span>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-1">Buat akun baru</p>
+          <p className="text-muted-foreground text-sm mt-2">Buat akun baru</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
@@ -74,13 +74,13 @@ const Register = () => {
               <Label htmlFor="confirmPassword">Konfirmasi Kata Sandi</Label>
               <Input id="confirmPassword" type="password" placeholder="Ulangi kata sandi" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full font-heading font-semibold" disabled={loading}>
+            <Button type="submit" className="w-full font-heading font-semibold bg-gold text-primary-foreground hover:bg-gold/90" disabled={loading}>
               {loading ? 'Memproses...' : 'Daftar Sekarang'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
             Sudah punya akun?{' '}
-            <Link to="/login" className="text-primary hover:underline font-semibold">Masuk di sini</Link>
+            <Link to="/login" className="text-gold hover:underline font-semibold">Masuk di sini</Link>
           </p>
         </CardContent>
       </Card>

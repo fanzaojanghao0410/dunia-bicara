@@ -34,11 +34,11 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className="w-full max-w-md bg-card border-border">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-2">
           <CardTitle className="font-heading text-2xl">
             Hello <span className="text-gold">World</span>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-1">Masuk ke akun Anda</p>
+          <p className="text-muted-foreground text-sm mt-2">Masuk ke akun Anda</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -50,13 +50,13 @@ const Login = () => {
               <Label htmlFor="password">Kata Sandi</Label>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full font-heading font-semibold" disabled={loading}>
+            <Button type="submit" className="w-full font-heading font-semibold bg-gold text-primary-foreground hover:bg-gold/90" disabled={loading}>
               {loading ? 'Memproses...' : 'Masuk'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
             Belum punya akun?{' '}
-            <Link to="/register" className="text-primary hover:underline font-semibold">Daftar di sini</Link>
+            <Link to="/register" className="text-gold hover:underline font-semibold">Daftar di sini</Link>
           </p>
         </CardContent>
       </Card>
